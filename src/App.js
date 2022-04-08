@@ -12,6 +12,7 @@ const auth = getAuth(app);
 function App() {
   const [validated, setValidated] = useState(false);
   const [email, setEmail] = useState('')
+  const [error, setError]= useState('')
   const [password, setPassword] = useState('')
   const handleEmailBlur= event=>{
    setEmail(event.target.value)
@@ -20,22 +21,30 @@ function App() {
     setPassword(event.target.value)
   }
   const handleSubmit= event=>{
+    event.preventDefault();
     const form = event.currentTarget;
     if (form.checkValidity() === false) {
-      event.preventDefault();
+      
       event.stopPropagation();
+      return;
     }
-
+    if(!/("^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#\$%\^&\*])(?=.{8,})")/.test(password)){
+      setError('please enter special and number chactor')
+      return;
+    }
     setValidated(true);
+    setError('')
     createUserWithEmailAndPassword(auth, email, password)
     .then((result)=>{
       const user = result.user
       console.log(user)
+      setEmail('')
+      setPassword('')
     })
     .catch((error)=>{
       console.log(error)
     })
-    event.preventDefault()
+    event.preventDefault();
   }
   return (
     <div>
@@ -58,8 +67,9 @@ function App() {
     <Form.Label>Password</Form.Label>
     <Form.Control onBlur={handlePasswordBlur} type="password" placeholder="Password" required />
     <Form.Control.Feedback type="invalid">
-              Please choose a username.
+              Please enter 6 digit and choose a special charactor
             </Form.Control.Feedback>
+            <p className="text-danger">{error}</p>
   </Form.Group>
   <Button variant="primary" type="submit">
     Submit
