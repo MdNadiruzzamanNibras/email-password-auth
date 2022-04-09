@@ -1,4 +1,4 @@
-import { getAuth, createUserWithEmailAndPassword } from "firebase/auth";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendEmailVerification, sendPasswordResetEmail } from "firebase/auth";
 import './App.css';
 import app from "./firebase.init";
 import 'bootstrap/dist/css/bootstrap.min.css';
@@ -11,6 +11,7 @@ const auth = getAuth(app);
 
 function App() {
   const [validated, setValidated] = useState(false);
+  const [registration, setRegistration] =useState(false);
   const [email, setEmail] = useState('')
   const [error, setError]= useState('')
   const [password, setPassword] = useState('')
@@ -20,6 +21,9 @@ function App() {
   const handlePasswordBlur= event=>{
     setPassword(event.target.value)
   }
+  const handleCheck = event =>{
+    setRegistration(event.target.checked)
+  }
   const handleSubmit= event=>{
     event.preventDefault();
     const form = event.currentTarget;
@@ -28,29 +32,58 @@ function App() {
       event.stopPropagation();
       return;
     }
-    if(!/("^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#\$%\^&\*])(?=.{8,})")/.test(password)){
+    if(!/(?=.*[!@#$%^&*])/.test(password)){
       setError('please enter special and number chactor')
       return;
     }
     setValidated(true);
     setError('')
-    createUserWithEmailAndPassword(auth, email, password)
+    if(registration){
+      signInWithEmailAndPassword(auth, email, password)
+      .then((result)=>{
+        const user = result.user
+        console.log(user)
+      })
+      .catch((error)=>{
+        console.log(error)
+        setError(error.massage)
+      })
+    }
+    else{
+      createUserWithEmailAndPassword(auth, email, password)
     .then((result)=>{
       const user = result.user
       console.log(user)
       setEmail('')
       setPassword('')
+      verify()
     })
     .catch((error)=>{
       console.log(error)
+      setError(error.massage)
     })
+   
+    }
     event.preventDefault();
+  }
+
+  const verify= ()=>{
+    sendEmailVerification(auth.currentUser)
+    .then(()=>{
+      console.log('Email verification sent')
+    })
+  }
+  const handleForget =()=>{
+    sendPasswordResetEmail(auth, email)
+    .then(()=>{
+      console.log('email sent')
+    })
   }
   return (
     <div>
      
       <div className="registration w-50 mx-auto">
-      <h2 className="text-primary mt-4">Please Registration</h2>
+      <h2 className="text-primary mt-4">Please {registration ? 'Login' : "Registration"}</h2>
       <Form noValidate validated={validated}  onSubmit={handleSubmit}>
   <Form.Group className="mb-3" controlId="formBasicEmail">
     <Form.Label>Email address</Form.Label>
@@ -70,9 +103,13 @@ function App() {
               Please enter 6 digit and choose a special charactor
             </Form.Control.Feedback>
             <p className="text-danger">{error}</p>
+     <Form.Group className="mb-3" controlId="formBasicCheckbox">
+    <Form.Check type="checkbox" onChange={handleCheck} label="Already registar " />
+  </Form.Group>
+  <Button onClick={handleForget} variant="link">Link</Button>
   </Form.Group>
   <Button variant="primary" type="submit">
-    Submit
+  {registration ? 'Login' : "Registration"}
   </Button>
 </Form>
       </div>
